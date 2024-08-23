@@ -17,9 +17,11 @@ fn hash<T: Hash>(t: &T) -> u64 {
 
 #[test]
 fn test_sizes() {
+    assert_eq!(size_of::<Option<OurBytes<Rc<Vec<u8>>, { size_of::<String>() - 2 }>>>(), size_of::<String>());
     assert_eq!(size_of::<OurBytes<Rc<Vec<u8>>, { size_of::<String>() - 1 }>>(), size_of::<String>());
     assert_eq!(size_of::<OurBytes<Rc<Vec<u8>>, { size_of::<String>() - 1 - size_of::<usize>() }>>(), size_of::<String>() - size_of::<usize>());
 
+    assert_eq!(size_of::<Option<OurBytes<Arc<Vec<u8>>, { size_of::<String>() - 2 }>>>(), size_of::<String>());
     assert_eq!(size_of::<OurBytes<Arc<Vec<u8>>, { size_of::<String>() - 1 }>>(), size_of::<String>());
     assert_eq!(size_of::<OurBytes<Arc<Vec<u8>>, { size_of::<String>() - 1 - size_of::<usize>() }>>(), size_of::<String>() - size_of::<usize>());
 

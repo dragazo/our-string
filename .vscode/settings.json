@@ -1,6 +1,10 @@
 {
     "cSpell.words": [
+        "derefs",
         "Hasher",
-        "proptest"
+        "inlines",
+        "println",
+        "proptest",
+        "struct"
     ]
 }
