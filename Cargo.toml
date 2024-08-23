@@ -2,6 +2,11 @@
 name = "our-string"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Devin Jean <emailcruzjean@yahoo.com>"]
+repository = "https://github.com/dragazo/our-string"
+documentation = "https://docs.rs/our-string"
+description = "Customizable shared strings with inlining"
 
 [dependencies]
 
