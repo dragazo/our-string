@@ -44,5 +44,7 @@ enum OurInner<T, const N: usize> {
 }
 
 mod bytes;
+mod string;
 
 pub use bytes::*;
+pub use string::*;

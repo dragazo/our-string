@@ -75,7 +75,7 @@ impl<T: BytesComrade, const N: usize> Borrow<[u8]> for OurBytes<T, N> {
 
 impl<T: BytesComrade, const N: usize> Debug for OurBytes<T, N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        (**self).fmt(f)
+        <[u8] as Debug>::fmt(&**self, f)
     }
 }
 

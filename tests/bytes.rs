@@ -1,7 +1,7 @@
 use std::cmp::{Ordering, PartialEq, Eq, PartialOrd, Ord};
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::borrow::Borrow;
 use std::mem::size_of;
-use std::hash::{DefaultHasher, Hash, Hasher};
 use std::ops::Deref;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -42,6 +42,27 @@ fn test_traits() {
 
     assert_impl!(OurBytes<Arc<Vec<u8>>, 8> : Send + Sync + Hash + Clone + Debug + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<[u8]> + Borrow<[u8]> + Deref<Target = [u8]> + for<'a> From<&'a [u8]> + From<Arc<Vec<u8>>>);
     assert_impl!(OurBytes<Arc<[u8]>,    8> : Send + Sync + Hash + Clone + Debug + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<[u8]> + Borrow<[u8]> + Deref<Target = [u8]> + for<'a> From<&'a [u8]> + From<Arc<[u8]>>);
+}
+
+#[test]
+fn test_clone() {
+    let a = OurBytes::<Rc<Vec<u8>>, 5>::from([5u8, 2, 7, 5, 2, 5, 4, 1, 7, 5].as_slice());
+    let b = a.clone();
+    assert_eq!(a, b);
+    assert_eq!(a.as_slice(), b.as_slice());
+    assert_eq!(a.as_slice() as *const [u8], b.as_slice() as *const [u8]);
+}
+proptest::proptest! {
+    #[test]
+    fn proptest_clone(s: Vec<u8>) {
+        let a = OurBytes::<Rc<Vec<u8>>, 5>::from(s.as_slice());
+        let b = a.clone();
+        assert_eq!(a, b);
+        assert_eq!(a.as_slice(), b.as_slice());
+        if a.len() > 5 {
+            assert_eq!(a.as_slice() as *const [u8], b.as_slice() as *const [u8]);
+        }
+    }
 }
 
 #[test]
@@ -174,7 +195,7 @@ proptest::proptest! {
 #[test]
 fn test_from_comrade() {
     assert_eq!(&*OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![] as Vec<u8>)) as &[u8], &[] as &[u8]);
-    assert_eq!(&*OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8] as Vec<u8>)), &[4u8] as &[u8]);
+    assert_eq!(&*OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8] as Vec<u8>)) as &[u8], &[4u8] as &[u8]);
     assert_eq!(&*OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6] as Vec<u8>)) as &[u8], &[4u8, 6] as &[u8]);
     assert_eq!(&*OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1] as Vec<u8>)) as &[u8], &[4u8, 6, 1] as &[u8]);
     assert_eq!(&*OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1, 84] as Vec<u8>)) as &[u8], &[4u8, 6, 1, 84] as &[u8]);
@@ -209,6 +230,7 @@ proptest::proptest! {
 
 #[test]
 fn test_debug() {
+    assert_eq!(format!("{:?}", OurBytes::<Rc<[u8]>, 4>::from(&[1u8, 2, 7] as &[u8])), format!("{:?}", &[1u8, 2, 7]));
     assert_eq!(format!("{:?}", OurBytes::<Rc<Vec<u8>>, 4>::from(&[1u8, 2, 3, 4] as &[u8])), format!("{:?}", &[1u8, 2, 3, 4]));
     assert_eq!(format!("{:?}", OurBytes::<Arc<Vec<u8>>, 4>::from(&[1u8, 2, 3, 4, 9, 1, 3, 255] as &[u8])), format!("{:?}", &[1u8, 2, 3, 4, 9, 1, 3, 255]));
 }
