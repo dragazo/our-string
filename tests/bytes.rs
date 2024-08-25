@@ -7,12 +7,19 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use std::rc::Rc;
 
-use our_string::OurBytes;
+use our_string::{OurBytes, BytesComrade};
 
 fn hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();
     t.hash(&mut s);
     s.finish()
+}
+
+fn is_inline<T: BytesComrade, const N: usize>(v: &OurBytes<T, N>) -> bool {
+    let l = v.len();
+    let s = v.as_slice() as *const [u8] as *const () as usize;
+    let v = v as *const OurBytes<T, N> as *const () as usize;
+    s >= v && s + l <= v + size_of::<OurBytes<T, N>>()
 }
 
 #[test]
@@ -90,30 +97,30 @@ fn test_new_default() {
 }
 
 #[test]
-fn test_new_inline() {
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[]).is_some());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4]).is_some());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6]).is_some());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6, 1]).is_some());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6, 1, 84]).is_some());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6, 1, 84, 255]).is_some());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6, 1, 84, 255, 12]).is_some());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6, 1, 84, 255, 12, 23, 98, 169, 23]).is_some());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45]).is_none());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65]).is_none());
-    assert!(OurBytes::<Rc<Vec<u8>>, 10>::new_inline(&[4, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56]).is_none());
+fn test_from_slice_inlining() {
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6, 1] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6, 1, 84] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6, 1, 84, 255] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6, 1, 84, 255, 12] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45] as &[u8])), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65] as &[u8])), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56] as &[u8])), false);
 
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[]).is_some());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4]).is_some());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6]).is_some());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6, 1]).is_some());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6, 1, 84]).is_some());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6, 1, 84, 255]).is_none());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6, 1, 84, 255, 12]).is_none());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6, 1, 84, 255, 12, 23, 98, 169, 23]).is_none());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45]).is_none());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65]).is_none());
-    assert!(OurBytes::<Arc<Vec<u8>>, 4>::new_inline(&[4, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56]).is_none());
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84] as &[u8])), true);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84, 255] as &[u8])), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84, 255, 12] as &[u8])), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23] as &[u8])), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45] as &[u8])), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65] as &[u8])), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56] as &[u8])), false);
 }
 
 #[test]
@@ -192,6 +199,33 @@ proptest::proptest! {
         assert_eq!(hash(&OurBytes::<Arc<Vec<u8>>, 4>::from(s.as_slice())), hash(&s.as_slice()));
         assert_eq!(hash(&OurBytes::<Arc<[u8]>, 4>::from(s.as_slice())), hash(&s.as_slice()));
     }
+}
+
+#[test]
+fn test_from_comrade_inlining() {
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1, 84] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1, 84, 255] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1, 84, 255, 12] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Rc<Vec<u8>>, 10>::from(Rc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56] as Vec<u8>))), false);
+
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84, 255] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84, 255, 12] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65] as Vec<u8>))), false);
+    assert_eq!(is_inline(&OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56] as Vec<u8>))), false);
 }
 
 #[test]

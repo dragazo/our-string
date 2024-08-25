@@ -10,6 +10,10 @@ comrade! { StringComrade : str }
 /// A customizable immutable shared string.
 ///
 /// Data is backed inline up to `N` bytes (max 255), or stored dynamically by [`StringComrade`] `T`.
+///
+/// This type can be constructed via the [`From`] trait given either a `&str` (in which case inlining is used)
+/// or a shared handle of type `T` (in which case no inlining is used and the shared handle is simply wrapped).
+/// Because of this, it is recommended to not use the `T` constructor unless you are already sharing the value around as type `T` directly.
 #[derive(Clone)]
 pub struct OurString<T: StringComrade, const N: usize>(crate::OurInner<T, N>);
 
@@ -17,16 +21,6 @@ impl<T: StringComrade, const N: usize> OurString<T, N> {
     /// Creates a new empty instance of [`OurString`] with inlined data.
     pub const fn new() -> Self {
         Self(crate::OurInner::Inline { len: NonZero::<u8>::MAX, content: [0; N] })
-    }
-    /// Attempts to create a new instance of [`OurString`] with inlined data.
-    pub fn new_inline(s: &str) -> Option<Self> {
-        if s.len() <= N && s.len() < u8::MAX as usize {
-            let mut content = [0; N];
-            content[..s.len()].copy_from_slice(s.as_bytes());
-            Some(Self(crate::OurInner::Inline { len: NonZero::new(!(s.len() as u8)).unwrap(), content }))
-        } else {
-            None
-        }
     }
     /// Gets a shared reference to the content.
     pub fn as_str(&self) -> &str {
@@ -46,12 +40,19 @@ impl<T: StringComrade, const N: usize> Deref for OurString<T, N> {
 
 impl<T: StringComrade, const N: usize> From<&str> for OurString<T, N> {
     fn from(value: &str) -> Self {
-        Self::new_inline(value).unwrap_or_else(|| Self(crate::OurInner::Outline { content: T::from_slice(value) }))
+        if value.len() <= N && value.len() < u8::MAX as usize {
+            let mut content = [0; N];
+            content[..value.len()].copy_from_slice(value.as_bytes());
+            Self(crate::OurInner::Inline { len: NonZero::new(!(value.len() as u8)).unwrap(), content })
+        } else {
+            Self(crate::OurInner::Outline { content: T::from_slice(value) })
+        }
     }
 }
+
 impl<T: StringComrade, const N: usize> From<T> for OurString<T, N> {
     fn from(value: T) -> Self {
-        Self::new_inline(value.as_slice()).unwrap_or_else(|| Self(crate::OurInner::Outline { content: value }))
+        Self(crate::OurInner::Outline { content: value })
     }
 }
 
@@ -96,11 +97,13 @@ impl<U: Deref<Target = str>, T: StringComrade, const N: usize> PartialEq<U> for 
         (**self).eq(&**other)
     }
 }
+
 impl<T: StringComrade, const N: usize> PartialEq<OurString<T, N>> for &str {
     fn eq(&self, other: &OurString<T, N>) -> bool {
         (**self).eq(&**other)
     }
 }
+
 impl<T: StringComrade, const N: usize> Eq for OurString<T, N> {}
 
 impl<U: Deref<Target = str>, T: StringComrade, const N: usize> PartialOrd<U> for OurString<T, N> {
@@ -108,6 +111,7 @@ impl<U: Deref<Target = str>, T: StringComrade, const N: usize> PartialOrd<U> for
         (**self).partial_cmp(&**other)
     }
 }
+
 impl<T: StringComrade, const N: usize> PartialOrd<OurString<T, N>> for &str {
     fn partial_cmp(&self, other: &OurString<T, N>) -> Option<Ordering> {
         (**self).partial_cmp(&**other)

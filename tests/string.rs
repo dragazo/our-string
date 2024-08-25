@@ -7,12 +7,19 @@ use std::ops::Deref;
 use std::sync::Arc;
 use std::rc::Rc;
 
-use our_string::OurString;
+use our_string::{OurString, StringComrade};
 
 fn hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();
     t.hash(&mut s);
     s.finish()
+}
+
+fn is_inline<T: StringComrade, const N: usize>(v: &OurString<T, N>) -> bool {
+    let l = v.len();
+    let s = v.as_str() as *const str as *const () as usize;
+    let v = v as *const OurString<T, N> as *const () as usize;
+    s >= v && s + l <= v + size_of::<OurString<T, N>>()
 }
 
 #[test]
@@ -88,30 +95,30 @@ fn test_new_default() {
 }
 
 #[test]
-fn test_new_inline() {
-    assert!(OurString::<Rc<String>, 10>::new_inline("").is_some());
-    assert!(OurString::<Rc<String>, 10>::new_inline("h").is_some());
-    assert!(OurString::<Rc<String>, 10>::new_inline("he").is_some());
-    assert!(OurString::<Rc<String>, 10>::new_inline("hel").is_some());
-    assert!(OurString::<Rc<String>, 10>::new_inline("hell").is_some());
-    assert!(OurString::<Rc<String>, 10>::new_inline("hello").is_some());
-    assert!(OurString::<Rc<String>, 10>::new_inline("hello ").is_some());
-    assert!(OurString::<Rc<String>, 10>::new_inline("hello from").is_some());
-    assert!(OurString::<Rc<String>, 10>::new_inline("hello from ").is_none());
-    assert!(OurString::<Rc<String>, 10>::new_inline("hello from the").is_none());
-    assert!(OurString::<Rc<String>, 10>::new_inline("hello from the other").is_none());
+fn test_from_slice_inlining() {
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("")), true);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("h")), true);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("he")), true);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("hel")), true);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("hell")), true);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("hello")), true);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("hello ")), true);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("hello from")), true);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("hello from ")), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("hello from the")), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from("hello from the other")), false);
 
-    assert!(OurString::<Arc<String>, 4>::new_inline("").is_some());
-    assert!(OurString::<Arc<String>, 4>::new_inline("h").is_some());
-    assert!(OurString::<Arc<String>, 4>::new_inline("he").is_some());
-    assert!(OurString::<Arc<String>, 4>::new_inline("hel").is_some());
-    assert!(OurString::<Arc<String>, 4>::new_inline("hell").is_some());
-    assert!(OurString::<Arc<String>, 4>::new_inline("hello").is_none());
-    assert!(OurString::<Arc<String>, 4>::new_inline("hello ").is_none());
-    assert!(OurString::<Arc<String>, 4>::new_inline("hello from").is_none());
-    assert!(OurString::<Arc<String>, 4>::new_inline("hello from ").is_none());
-    assert!(OurString::<Arc<String>, 4>::new_inline("hello from the").is_none());
-    assert!(OurString::<Arc<String>, 4>::new_inline("hello from the other").is_none());
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("")), true);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("h")), true);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("he")), true);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("hel")), true);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("hell")), true);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("hello")), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("hello ")), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("hello from")), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("hello from ")), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("hello from the")), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from("hello from the other")), false);
 }
 
 #[test]
@@ -190,6 +197,33 @@ proptest::proptest! {
         assert_eq!(hash(&OurString::<Arc<String>, 4>::from(s.as_str())), hash(&s.as_str()));
         assert_eq!(hash(&OurString::<Arc<str>, 4>::from(s.as_str())), hash(&s.as_str()));
     }
+}
+
+#[test]
+fn test_from_comrade_inlining() {
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("h")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("he")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("hel")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("hell")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("hello")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("hello ")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("hello from")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("hello from ")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("hello from the")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<String>, 10>::from(Rc::new(String::from("hello from the other")))), false);
+
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("h")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("he")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("hel")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("hell")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("hello")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("hello ")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("hello from")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("hello from ")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("hello from the")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<String>, 4>::from(Arc::new(String::from("hello from the other")))), false);
 }
 
 #[test]

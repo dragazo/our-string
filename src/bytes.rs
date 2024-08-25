@@ -10,6 +10,10 @@ comrade! { BytesComrade : [u8] }
 /// A customizable immutable shared byte collection.
 ///
 /// Data is backed inline up to `N` bytes (max 255), or stored dynamically by [`BytesComrade`] `T`.
+///
+/// This type can be constructed via the [`From`] trait given either a `&[u8]` (in which case inlining is used)
+/// or a shared handle of type `T` (in which case no inlining is used and the shared handle is simply wrapped).
+/// Because of this, it is recommended to not use the `T` constructor unless you are already sharing the value around as type `T` directly.
 #[derive(Clone)]
 pub struct OurBytes<T: BytesComrade, const N: usize>(crate::OurInner<T, N>);
 
@@ -17,16 +21,6 @@ impl<T: BytesComrade, const N: usize> OurBytes<T, N> {
     /// Creates a new empty instance of [`OurBytes`] with inlined data.
     pub const fn new() -> Self {
         Self(crate::OurInner::Inline { len: NonZero::<u8>::MAX, content: [0; N] })
-    }
-    /// Attempts to create a new instance of [`OurBytes`] with inlined data.
-    pub fn new_inline(s: &[u8]) -> Option<Self> {
-        if s.len() <= N && s.len() < u8::MAX as usize {
-            let mut content = [0; N];
-            content[..s.len()].copy_from_slice(s);
-            Some(Self(crate::OurInner::Inline { len: NonZero::new(!(s.len() as u8)).unwrap(), content }))
-        } else {
-            None
-        }
     }
     /// Gets a shared reference to the content.
     pub fn as_slice(&self) -> &[u8] {
@@ -46,12 +40,19 @@ impl<T: BytesComrade, const N: usize> Deref for OurBytes<T, N> {
 
 impl<T: BytesComrade, const N: usize> From<&[u8]> for OurBytes<T, N> {
     fn from(value: &[u8]) -> Self {
-        Self::new_inline(value).unwrap_or_else(|| Self(crate::OurInner::Outline { content: T::from_slice(value) }))
+        if value.len() <= N && value.len() < u8::MAX as usize {
+            let mut content = [0; N];
+            content[..value.len()].copy_from_slice(value);
+            Self(crate::OurInner::Inline { len: NonZero::new(!(value.len() as u8)).unwrap(), content })
+        } else {
+            Self(crate::OurInner::Outline { content: T::from_slice(value) })
+        }
     }
 }
+
 impl<T: BytesComrade, const N: usize> From<T> for OurBytes<T, N> {
     fn from(value: T) -> Self {
-        Self::new_inline(value.as_slice()).unwrap_or_else(|| Self(crate::OurInner::Outline { content: value }))
+        Self(crate::OurInner::Outline { content: value })
     }
 }
 
@@ -90,11 +91,13 @@ impl<U: Deref<Target = [u8]>, T: BytesComrade, const N: usize> PartialEq<U> for 
         (**self).eq(&**other)
     }
 }
+
 impl<T: BytesComrade, const N: usize> PartialEq<OurBytes<T, N>> for &[u8] {
     fn eq(&self, other: &OurBytes<T, N>) -> bool {
         (**self).eq(&**other)
     }
 }
+
 impl<T: BytesComrade, const N: usize> Eq for OurBytes<T, N> {}
 
 impl<U: Deref<Target = [u8]>, T: BytesComrade, const N: usize> PartialOrd<U> for OurBytes<T, N> {
@@ -102,6 +105,7 @@ impl<U: Deref<Target = [u8]>, T: BytesComrade, const N: usize> PartialOrd<U> for
         (**self).partial_cmp(&**other)
     }
 }
+
 impl<T: BytesComrade, const N: usize> PartialOrd<OurBytes<T, N>> for &[u8] {
     fn partial_cmp(&self, other: &OurBytes<T, N>) -> Option<Ordering> {
         (**self).partial_cmp(&**other)
