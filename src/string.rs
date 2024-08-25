@@ -9,11 +9,12 @@ comrade! { StringComrade : str }
 
 /// A customizable immutable shared string.
 ///
-/// Data is backed inline up to `N` bytes (max 255), or stored dynamically by [`StringComrade`] `T`.
+/// Data is backed inline up to `N` bytes (max 255), or stored dynamically by (shared) [`StringComrade`] `T`.
 ///
-/// This type can be constructed via the [`From`] trait given either a `&str` (in which case inlining is used)
+/// This type can be constructed via the [`From`] trait given either a `&str` (in which case inlining is attempted but may result in a shared `T` allocation)
 /// or a shared handle of type `T` (in which case no inlining is used and the shared handle is simply wrapped).
-/// Because of this, it is recommended to not use the `T` constructor unless you are already sharing the value around as type `T` directly.
+///
+/// Because of this, it is recommended to not use the `T` constructor unless you are already sharing the value around as type `T` elsewhere.
 #[derive(Clone)]
 pub struct OurString<T: StringComrade, const N: usize>(crate::OurInner<T, N>);
 
@@ -21,6 +22,18 @@ impl<T: StringComrade, const N: usize> OurString<T, N> {
     /// Creates a new empty instance of [`OurString`] with inlined data.
     pub const fn new() -> Self {
         Self(crate::OurInner::Inline { len: NonZero::<u8>::MAX, content: [0; N] })
+    }
+    /// Converts this [`OurString`] instance into another [`OurString`] type which uses the same shared type `T`.
+    ///
+    /// If the content of this instance is already allocated via shared handle `T`, that handle will simply be reused without inlining.
+    /// Otherwise, re-inlining will be attempted, but may fail if `M < N` and result in a new shared `T` allocation.
+    ///
+    /// Because of this, it is advised to minimize the use of this function (e.g., by only using one [`OurString`] type throughout your codebase).
+    pub fn convert<const M: usize>(self) -> OurString<T, M> {
+        match self.0 {
+            crate::OurInner::Inline { .. } => OurString::from(self.as_str()),
+            crate::OurInner::Outline { content } => OurString::from(content),
+        }
     }
     /// Gets a shared reference to the content.
     pub fn as_str(&self) -> &str {

@@ -351,3 +351,18 @@ fn test_index() {
     assert_eq!(a[3], a.as_slice()[3]);
     assert_eq!(a[0], a.as_slice()[0]);
 }
+
+#[test]
+fn test_convert() {
+    let a = OurBytes::<Rc<[u8]>, 8>::from([5u8, 1, 6, 3, 6].as_slice());
+    assert_eq!(is_inline(&a), true);
+    let b: OurBytes<Rc<[u8]>, 5> = a.convert();
+    assert_eq!(is_inline(&b), true);
+    let c: OurBytes<Rc<[u8]>, 10> = b.convert();
+    assert_eq!(is_inline(&c), true);
+    let d: OurBytes<Rc<[u8]>, 4> = c.convert();
+    assert_eq!(is_inline(&d), false);
+    let e: OurBytes<Rc<[u8]>, 10> = d.clone().convert();
+    assert_eq!(is_inline(&e), false);
+    assert_eq!(d.as_slice().as_ptr(), e.as_slice().as_ptr());
+}

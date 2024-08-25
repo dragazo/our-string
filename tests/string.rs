@@ -359,3 +359,18 @@ fn test_as_bytes() {
     let a = OurString::<Rc<String>, 8>::from("test message thing");
     assert_eq!(a.as_bytes() as &[u8], b"test message thing");
 }
+
+#[test]
+fn test_convert() {
+    let a = OurString::<Rc<str>, 8>::from("hello");
+    assert_eq!(is_inline(&a), true);
+    let b: OurString<Rc<str>, 5> = a.convert();
+    assert_eq!(is_inline(&b), true);
+    let c: OurString<Rc<str>, 10> = b.convert();
+    assert_eq!(is_inline(&c), true);
+    let d: OurString<Rc<str>, 4> = c.convert();
+    assert_eq!(is_inline(&d), false);
+    let e: OurString<Rc<str>, 10> = d.clone().convert();
+    assert_eq!(is_inline(&e), false);
+    assert_eq!(d.as_str().as_ptr(), e.as_str().as_ptr());
+}
