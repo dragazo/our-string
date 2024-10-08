@@ -10,7 +10,7 @@ Notably, this includes `String` and `str` for [`OurString`], as well as `Vec<u8>
 
 The second generic parameter is the max inlining size.
 Increasing this value allows larger strings to be stored inline (i.e., without allocations), but also increases the size of the struct overall.
-Note that inlining is limited to 255 bytes, even if you make the stated max size larger.
+Note that inlining is limited to 254 bytes, even if you make the stated max size larger.
 
 ## Examples
 
@@ -38,7 +38,7 @@ let a = MyString::from("hello world!");
 assert_eq!(a, "hello world!");
 ```
 
-In the previous examples, we use `Rc<str>` rather than `Rc<String>` to avoid double indirection in the non-inline case.
+In the previous examples, we use `Rc<str>` rather than `Rc<String>` to avoid double allocation/indirection in the non-inline case.
 However, `Rc<str>` takes up 16 bytes, rather than `Rc<String>` at 8 bytes.
 Thus, if the size of your struct is more important than the possible double indirection, you may instead use something like:
 
@@ -53,7 +53,10 @@ let a = MyString::from("hello world!");
 assert_eq!(a, "hello world!");
 ```
 
-The important advantage of this crate is that you have all the control in how the string type is laid out, and the api remains completely unchanged.
+But for this size-minimizing goal, we can do even better by switching our underlying string container to one provided by other specialized string crates.
+For instance, by using the `HeapStr` type provided by [`heap-slice`](https://crates.io/crates/heap-slice), we can have `OurString<Rc<HeapStr>, 15>` take only 16 bytes but still avoid the double allocation/indirection.
+
+This is all to say that the important advantage of this crate is that you have all the control in how the string type is laid out, and the api remains completely unchanged.
 
 - If you want more inlining, increase the max inlining size.
 - If you want to save space, decrease the max inlining size.
@@ -62,7 +65,7 @@ The important advantage of this crate is that you have all the control in how th
 - If you want thread safety, use `Arc<T>` instead of `Rc<T>`.
 - If you want to use a custom string type internally, go right ahead and use `Rc<WhateverYouWant>`.
 
-The choice is yours.
+The choice is yours, comrade.
 
 ## `no_std`
 

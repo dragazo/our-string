@@ -9,7 +9,7 @@ comrade! { BytesComrade : [u8] }
 
 /// A customizable immutable shared byte collection.
 ///
-/// Data is backed inline up to `N` bytes (max 255), or stored dynamically by (shared) [`BytesComrade`] `T`.
+/// Data is backed inline up to `N` bytes (max 254), or stored dynamically by (shared) [`BytesComrade`] `T`.
 ///
 /// This type can be constructed via the [`From`] trait given either a `&[u8]` (in which case inlining is attempted but may result in a shared `T` allocation)
 /// or a shared handle of type `T` (in which case no inlining is used and the shared handle is simply wrapped).

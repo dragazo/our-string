@@ -9,7 +9,7 @@ comrade! { StringComrade : str }
 
 /// A customizable immutable shared string.
 ///
-/// Data is backed inline up to `N` bytes (max 255), or stored dynamically by (shared) [`StringComrade`] `T`.
+/// Data is backed inline up to `N` bytes (max 254), or stored dynamically by (shared) [`StringComrade`] `T`.
 ///
 /// This type can be constructed via the [`From`] trait given either a `&str` (in which case inlining is attempted but may result in a shared `T` allocation)
 /// or a shared handle of type `T` (in which case no inlining is used and the shared handle is simply wrapped).
