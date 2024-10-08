@@ -1,5 +1,5 @@
-Comrades, for too long have the capitalist pigs resorted to `O(n)` cloning of strings to maintain their "ownership" lifestyles.
-And woe, for [`Rc<T>`](alloc::rc::Rc) and [`Arc<T>`](alloc::sync::Arc) are still beholden to the cruel rule of forced allocation.
+Comrades, for too long have the capitalist pigs resorted to `O(n)` cloning of values to maintain their "ownership" lifestyles.
+And woe, for even [`Rc<T>`](alloc::rc::Rc) and [`Arc<T>`](alloc::sync::Arc) are still beholden to the cruel rule of forced allocation.
 But rejoice! For this crate presents a truly socialist shared string type, fully customizable by the People and for the People.
 
 This crate introduces two new generic types, [`OurString`] and [`OurBytes`], which are customizable shared string/bytes types with (allocation-free) auto-inlining for small data.
@@ -10,7 +10,7 @@ Notably, this includes `Rc<Vec<u8>>`, `Rc<[u8]>`, `Arc<Vec<u8>>`, and `Arc<[u8]>
 You may also use other specialized types defined in this crate, such as [`RcBytes`](crate::comrades::RcBytes) and [`ArcBytes`](crate::comrades::ArcBytes), or even implement [`Comrade`] on your own container type.
 
 The second generic parameter is the max inlining size.
-Increasing this value allows larger strings to be stored inline (i.e., without allocations), but also increases the size of the struct overall.
+Increasing this value allows larger values to be stored inline (i.e., without allocations), but also increases the size of the struct overall.
 Note that inlining is limited to 254 bytes, even if you make the stated max size larger.
 
 ## Examples
@@ -27,13 +27,14 @@ let a = MyString::from("hello world!");
 assert_eq!(a, "hello world!");
 ```
 
-However, you may notice that `Option<MyString>` is larger than `MyString` (unlike `String`), but we can easily trade one byte of inlining for this size optimization:
+However, you may notice that `Option<MyString>` is larger than `MyString` (unlike `Option<String>` and `String`), but we can easily trade one byte of inlining for this size optimization:
 
 ```
 # use std::rc::Rc;
 # use our_string::OurString;
 type MyString = OurString<Rc<[u8]>, 22>;
-assert_eq!(size_of::<Option<MyString>>(), size_of::<String>());
+assert_eq!(size_of::<MyString>(), size_of::<String>());
+assert_eq!(size_of::<Option<MyString>>(), size_of::<MyString>());
 
 let a = MyString::from("hello world!");
 assert_eq!(a, "hello world!");

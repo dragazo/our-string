@@ -70,8 +70,8 @@ impl<T: Comrade, const N: usize> From<&[u8]> for OurBytes<T, N> {
 }
 
 impl<T: Comrade, const N: usize> From<T> for OurBytes<T, N> {
-    fn from(value: T) -> Self {
-        Self(OurInner::Outline { content: value })
+    fn from(content: T) -> Self {
+        Self(OurInner::Outline { content })
     }
 }
 

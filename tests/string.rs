@@ -44,11 +44,11 @@ fn test_traits() {
         }};
     }
 
-    assert_impl!(OurString<Rc<Vec<u8>>, 8> : Hash + Clone + Debug + Display + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<str> + Borrow<str> + Deref<Target = str> + for<'a> From<&'a str> + From<Rc<Vec<u8>>>);
-    assert_impl!(OurString<Rc<[u8]>,    8> : Hash + Clone + Debug + Display + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<str> + Borrow<str> + Deref<Target = str> + for<'a> From<&'a str> + From<Rc<[u8]>>);
+    assert_impl!(OurString<Rc<Vec<u8>>, 8> : Hash + Clone + Debug + Display + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<str> + Borrow<str> + Deref<Target = str> + for<'a> From<&'a str>);
+    assert_impl!(OurString<Rc<[u8]>,    8> : Hash + Clone + Debug + Display + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<str> + Borrow<str> + Deref<Target = str> + for<'a> From<&'a str>);
 
-    assert_impl!(OurString<Arc<Vec<u8>>, 8> : Send + Sync + Hash + Clone + Debug + Display + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<str> + Borrow<str> + Deref<Target = str> + for<'a> From<&'a str> + From<Arc<Vec<u8>>>);
-    assert_impl!(OurString<Arc<[u8]>,    8> : Send + Sync + Hash + Clone + Debug + Display + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<str> + Borrow<str> + Deref<Target = str> + for<'a> From<&'a str> + From<Arc<[u8]>>);
+    assert_impl!(OurString<Arc<Vec<u8>>, 8> : Send + Sync + Hash + Clone + Debug + Display + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<str> + Borrow<str> + Deref<Target = str> + for<'a> From<&'a str>);
+    assert_impl!(OurString<Arc<[u8]>,    8> : Send + Sync + Hash + Clone + Debug + Display + PartialEq + Eq + PartialOrd + Ord + Default + AsRef<str> + Borrow<str> + Deref<Target = str> + for<'a> From<&'a str>);
 }
 
 #[test]
@@ -204,65 +204,65 @@ proptest::proptest! {
 
 #[test]
 fn test_from_comrade_inlining() {
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("h")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("he")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hel")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hell")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello ")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello from")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello from ")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello from the")))), false);
-    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello from the other")))), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("h")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("he")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hel")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hell")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello ")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello from")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello from ")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello from the")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello from the other")).into()).unwrap()), false);
 
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("h")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("he")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hel")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hell")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello ")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello from")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello from ")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello from the")))), false);
-    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello from the other")))), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("h")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("he")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hel")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hell")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello ")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello from")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello from ")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello from the")).into()).unwrap()), false);
+    assert_eq!(is_inline(&OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello from the other")).into()).unwrap()), false);
 }
 
 #[test]
 fn test_from_comrade() {
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from(""))) as &str, "");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("h"))) as &str, "h");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("he"))) as &str, "he");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hel"))) as &str, "hel");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hell"))) as &str, "hell");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello"))) as &str, "hello");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello "))) as &str, "hello ");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello from"))) as &str, "hello from");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello from "))) as &str, "hello from ");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello from the"))) as &str, "hello from the");
-    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(Vec::<u8>::from("hello from the other"))) as &str, "hello from the other");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("")).into()).unwrap() as &str, "");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("h")).into()).unwrap() as &str, "h");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("he")).into()).unwrap() as &str, "he");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hel")).into()).unwrap() as &str, "hel");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hell")).into()).unwrap() as &str, "hell");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello")).into()).unwrap() as &str, "hello");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello ")).into()).unwrap() as &str, "hello ");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello from")).into()).unwrap() as &str, "hello from");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello from ")).into()).unwrap() as &str, "hello from ");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello from the")).into()).unwrap() as &str, "hello from the");
+    assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(Vec::<u8>::from("hello from the other")).into()).unwrap() as &str, "hello from the other");
 
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from(""))) as &str, "");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("h"))) as &str, "h");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("he"))) as &str, "he");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hel"))) as &str, "hel");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hell"))) as &str, "hell");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello"))) as &str, "hello");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello "))) as &str, "hello ");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello from"))) as &str, "hello from");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello from "))) as &str, "hello from ");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello from the"))) as &str, "hello from the");
-    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from(Arc::new(Vec::<u8>::from("hello from the other"))) as &str, "hello from the other");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("")).into()).unwrap() as &str, "");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("h")).into()).unwrap() as &str, "h");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("he")).into()).unwrap() as &str, "he");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hel")).into()).unwrap() as &str, "hel");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hell")).into()).unwrap() as &str, "hell");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello")).into()).unwrap() as &str, "hello");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello ")).into()).unwrap() as &str, "hello ");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello from")).into()).unwrap() as &str, "hello from");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello from ")).into()).unwrap() as &str, "hello from ");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello from the")).into()).unwrap() as &str, "hello from the");
+    assert_eq!(&*OurString::<Arc<Vec<u8>>, 4>::from_utf8(Arc::new(Vec::<u8>::from("hello from the other")).into()).unwrap() as &str, "hello from the other");
 }
 #[cfg(not(miri))]
 proptest::proptest! {
     #[test]
     fn proptest_from_comrade(s: String) {
-        assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from(Rc::new(s.clone().into_bytes())) as &str, s.as_str());
-        assert_eq!(&*OurString::<Arc<Vec<u8>>, 10>::from(Arc::new(s.clone().into_bytes())) as &str, s.as_str());
-        assert_eq!(&*OurString::<Rc<[u8]>, 10>::from(Rc::from(s.as_bytes())) as &str, s.as_str());
-        assert_eq!(&*OurString::<Arc<[u8]>, 10>::from(Arc::from(s.as_bytes())) as &str, s.as_str());
+        assert_eq!(&*OurString::<Rc<Vec<u8>>, 10>::from_utf8(Rc::new(s.clone().into_bytes()).into()).unwrap() as &str, s.as_str());
+        assert_eq!(&*OurString::<Arc<Vec<u8>>, 10>::from_utf8(Arc::new(s.clone().into_bytes()).into()).unwrap() as &str, s.as_str());
+        assert_eq!(&*OurString::<Rc<[u8]>, 10>::from_utf8(Rc::<[u8]>::from(s.as_bytes()).into()).unwrap() as &str, s.as_str());
+        assert_eq!(&*OurString::<Arc<[u8]>, 10>::from_utf8(Arc::<[u8]>::from(s.as_bytes()).into()).unwrap() as &str, s.as_str());
     }
 }
 
@@ -280,11 +280,11 @@ fn test_debug_display() {
 proptest::proptest! {
     #[test]
     fn proptest_debug_display(s: String) {
-        assert_eq!(format!("{:?}", OurString::<Rc<[u8]>, 4>::from(Rc::from(s.as_bytes()))), format!("{s:?}"));
-        assert_eq!(format!("{:?}", OurString::<Arc<[u8]>, 4>::from(Arc::from(s.as_bytes()))), format!("{s:?}"));
+        assert_eq!(format!("{:?}", OurString::<Rc<[u8]>, 4>::from_utf8(Rc::<[u8]>::from(s.as_bytes()).into()).unwrap()), format!("{s:?}"));
+        assert_eq!(format!("{:?}", OurString::<Arc<[u8]>, 4>::from_utf8(Arc::<[u8]>::from(s.as_bytes()).into()).unwrap()), format!("{s:?}"));
 
-        assert_eq!(format!("{}", OurString::<Rc<[u8]>, 4>::from(Rc::from(s.as_bytes()))), format!("{s}"));
-        assert_eq!(format!("{}", OurString::<Arc<[u8]>, 4>::from(Arc::from(s.as_bytes()))), format!("{s}"));
+        assert_eq!(format!("{}", OurString::<Rc<[u8]>, 4>::from_utf8(Rc::<[u8]>::from(s.as_bytes()).into()).unwrap()), format!("{s}"));
+        assert_eq!(format!("{}", OurString::<Arc<[u8]>, 4>::from_utf8(Arc::<[u8]>::from(s.as_bytes()).into()).unwrap()), format!("{s}"));
     }
 }
 

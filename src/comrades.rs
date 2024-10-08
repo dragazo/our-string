@@ -37,8 +37,11 @@ impl Counter for core::sync::atomic::AtomicUsize {
 }
 
 macro_rules! make_comrade {
-    ($name:ident : $counter:ty) => {
-        pub struct $name(NonNull<u8>);
+    ($(#[$m:meta])? $vis:vis struct $name:ident : $counter:ty) => {
+        $(#[$m])?
+        ///
+        /// We do not support weak semantics, as all are equal under socialism.
+        $vis struct $name(NonNull<u8>);
 
         impl From<&[u8]> for $name {
             fn from(value: &[u8]) -> Self {
@@ -141,9 +144,9 @@ macro_rules! make_comrade {
         }
     };
 }
-make_comrade!(RcBytes : Cell<usize>);
+make_comrade!(#[doc = "Basically `Rc<[u8]>` but only takes up half the stack space."] pub struct RcBytes : Cell<usize>);
 #[cfg(target_has_atomic = "ptr")]
-make_comrade!(ArcBytes : core::sync::atomic::AtomicUsize);
+make_comrade!(#[doc = "Basically `Arc<[u8]>` but only takes up half the stack space."] pub struct ArcBytes : core::sync::atomic::AtomicUsize);
 
 #[cfg(target_has_atomic = "ptr")]
 unsafe impl Send for ArcBytes {}

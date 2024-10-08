@@ -56,4 +56,20 @@ fn test_rc_bytes() {
 fn test_arc_bytes() {
     assert_eq!(size_of::<ArcBytes>(), size_of::<usize>());
     assert_eq!(size_of::<Option<ArcBytes>>(), size_of::<usize>());
+
+    for value in ["".as_bytes(), b"h", b"he", b"hel", b"help", b"help me obi-wan kenobi, you're my only hope"] {
+        let v = ArcBytes::from(value);
+        assert_eq!(v, value);
+        assert_eq!(&*v, value);
+        assert_ne!(v.as_ptr(), value.as_ptr());
+        let vv = v.clone();
+        assert_eq!(vv, value);
+        assert_eq!(&*vv, value);
+        assert_ne!(v.as_ptr(), value.as_ptr());
+        assert_eq!(v.as_ptr(), vv.as_ptr());
+    }
+
+    let empty = ArcBytes::default();
+    assert_eq!(empty.is_empty(), true);
+    assert_eq!(empty, &[] as &[u8]);
 }

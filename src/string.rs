@@ -6,21 +6,22 @@ use core::hash::Hash;
 
 use crate::Comrade;
 
+#[derive(Default, Clone)]
+struct ItsUtf8ISwear;
+
 /// A customizable immutable shared string.
 ///
 /// Data is backed inline up to `N` bytes (max 254), or stored dynamically by (shared) [`Comrade`] `T`.
 ///
-/// This type can be constructed via the [`From`] trait given either a `&str` (in which case inlining is attempted but may result in a shared `T` allocation)
-/// or a shared handle of type `T` (in which case no inlining is used and the shared handle is simply wrapped).
-///
-/// Because of this, it is recommended to not use the `T` constructor unless you are already sharing the value around as type `T` elsewhere.
+/// This type can be constructed via the [`From`] trait given a `&str` (in which case inlining is attempted but may result in a shared `T` allocation)
+/// or via [`OurString::from_utf8`] given the underlying shared [`OurBytes`](crate::OurBytes) container (in which case the shared handle is simply wrapped after checking UTF-8 compliance).
 #[derive(Default, Clone)]
-pub struct OurString<T: Comrade, const N: usize>(crate::OurBytes<T, N>);
+pub struct OurString<T: Comrade, const N: usize>(crate::OurBytes<T, N>, ItsUtf8ISwear);
 
 impl<T: Comrade, const N: usize> OurString<T, N> {
     /// Creates a new empty instance of [`OurString`] with inlined data.
     pub const fn new() -> Self {
-        Self(crate::OurBytes::new())
+        Self(crate::OurBytes::new(), ItsUtf8ISwear)
     }
     /// Converts this [`OurString`] instance into another [`OurString`] type which uses the same shared type `T`.
     ///
@@ -29,7 +30,7 @@ impl<T: Comrade, const N: usize> OurString<T, N> {
     ///
     /// Because of this, it is advised to minimize the use of this function (e.g., by only using one [`OurString`] type throughout your codebase).
     pub fn convert<const M: usize>(self) -> OurString<T, M> {
-        OurString(self.0.convert())
+        OurString(self.0.convert(), ItsUtf8ISwear)
     }
     /// Gets a shared reference to the content.
     pub fn as_str(&self) -> &str {
@@ -42,7 +43,7 @@ impl<T: Comrade, const N: usize> OurString<T, N> {
     /// Attempts to construct a new [`OurString`] instance from the underlying shared bytes container.
     pub fn from_utf8(value: crate::OurBytes<T, N>) -> Result<Self, core::str::Utf8Error> {
         core::str::from_utf8(&value)?;
-        Ok(Self(value))
+        Ok(Self(value, ItsUtf8ISwear))
     }
 }
 
@@ -55,13 +56,7 @@ impl<T: Comrade, const N: usize> Deref for OurString<T, N> {
 
 impl<T: Comrade, const N: usize> From<&str> for OurString<T, N> {
     fn from(value: &str) -> Self {
-        Self(value.as_bytes().into())
-    }
-}
-
-impl<T: Comrade, const N: usize> From<T> for OurString<T, N> {
-    fn from(value: T) -> Self {
-        Self(value.into())
+        Self(value.as_bytes().into(), ItsUtf8ISwear)
     }
 }
 
