@@ -1,8 +1,13 @@
 {
     "cSpell.words": [
+        "alloc",
+        "dealloc",
         "derefs",
         "Hasher",
         "inlines",
+        "kenobi",
+        "miri",
+        "nonoverlapping",
         "println",
         "proptest",
         "struct"

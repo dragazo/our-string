@@ -1,4 +1,4 @@
-use std::cmp::{Ordering, PartialEq, Eq, PartialOrd, Ord};
+use std::cmp::{PartialEq, Eq, PartialOrd, Ord};
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::borrow::Borrow;
 use std::mem::size_of;
@@ -7,7 +7,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use std::rc::Rc;
 
-use our_string::{OurBytes, BytesComrade};
+use our_string::{OurBytes, Comrade};
 
 fn hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();
@@ -15,7 +15,7 @@ fn hash<T: Hash>(t: &T) -> u64 {
     s.finish()
 }
 
-fn is_inline<T: BytesComrade, const N: usize>(v: &OurBytes<T, N>) -> bool {
+fn is_inline<T: Comrade, const N: usize>(v: &OurBytes<T, N>) -> bool {
     let l = v.len();
     let s = v.as_slice() as *const [u8] as *const () as usize;
     let v = v as *const OurBytes<T, N> as *const () as usize;
@@ -61,6 +61,7 @@ fn test_clone() {
     assert_eq!(a.as_slice(), b.as_slice());
     assert_eq!(a.as_slice() as *const [u8], b.as_slice() as *const [u8]);
 }
+#[cfg(not(miri))]
 proptest::proptest! {
     #[test]
     fn proptest_clone(s: Vec<u8>) {
@@ -149,6 +150,7 @@ fn test_from_slice() {
     assert_eq!(&*OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65] as &[u8]) as &[u8], &[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65] as &[u8]);
     assert_eq!(&*OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56] as &[u8]) as &[u8], &[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56] as &[u8]);
 }
+#[cfg(not(miri))]
 proptest::proptest! {
     #[test]
     fn proptest_from_slice(s: Vec<u8>) {
@@ -191,6 +193,7 @@ fn test_hash() {
     assert_eq!(hash(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6] as &[u8])), hash(&[4u8, 6].as_slice()));
     assert_eq!(hash(&OurBytes::<Arc<Vec<u8>>, 4>::from(&[4u8, 6, 7, 4, 5, 2, 4, 3, 2, 255, 160, 2] as &[u8])), hash(&[4u8, 6, 7, 4, 5, 2, 4, 3, 2, 255, 160, 2].as_slice()));
 }
+#[cfg(not(miri))]
 proptest::proptest! {
     #[test]
     fn proptest_hash(s: Vec<u8>) {
@@ -254,6 +257,7 @@ fn test_from_comrade() {
     assert_eq!(&*OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65] as Vec<u8>)) as &[u8], &[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65] as &[u8]);
     assert_eq!(&*OurBytes::<Arc<Vec<u8>>, 4>::from(Arc::new(vec![4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56] as Vec<u8>)) as &[u8], &[4u8, 6, 1, 84, 255, 12, 23, 98, 169, 23, 45, 65, 56, 23, 76, 45, 98, 23, 56] as &[u8]);
 }
+#[cfg(not(miri))]
 proptest::proptest! {
     #[test]
     fn proptest_from_comrade(s: Vec<u8>) {
@@ -270,6 +274,7 @@ fn test_debug() {
     assert_eq!(format!("{:?}", OurBytes::<Rc<Vec<u8>>, 4>::from(&[1u8, 2, 3, 4] as &[u8])), format!("{:?}", &[1u8, 2, 3, 4]));
     assert_eq!(format!("{:?}", OurBytes::<Arc<Vec<u8>>, 4>::from(&[1u8, 2, 3, 4, 9, 1, 3, 255] as &[u8])), format!("{:?}", &[1u8, 2, 3, 4, 9, 1, 3, 255]));
 }
+#[cfg(not(miri))]
 proptest::proptest! {
     #[test]
     fn proptest_debug(s: Vec<u8>) {
@@ -320,13 +325,14 @@ fn test_comparison() {
     assert_eq!(b1 > a ,  true ); assert_eq!(b1 > a1,  true ); assert_eq!(b1 > a2,  true ); assert_eq!(b1 > a3,  true ); assert_eq!(b2 > a ,  true );
     assert_eq!(b2 > a1,  true ); assert_eq!(b2 > a2,  true ); assert_eq!(b2 > a3,  true ); assert_eq!(b  > a1,  true ); assert_eq!(b  > a2,  true );
 }
+#[cfg(not(miri))]
 proptest::proptest! {
     #[test]
     fn proptest_comparison(a: Vec<u8>, b: Vec<u8>) {
-        fn partial_cmp<A, B>(a: &A, b: &B) -> Option<Ordering> where A: PartialOrd<B> {
+        fn partial_cmp<A, B>(a: &A, b: &B) -> Option<core::cmp::Ordering> where A: PartialOrd<B> {
             a.partial_cmp(b)
         }
-        fn cmp<A>(a: &A, b: &A) -> Ordering where A: Ord {
+        fn cmp<A>(a: &A, b: &A) -> core::cmp::Ordering where A: Ord {
             a.cmp(b)
         }
 

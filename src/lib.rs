@@ -1,50 +1,33 @@
 #![no_std]
-#![forbid(unsafe_code)]
-
 #![doc = include_str!("../README.md")]
 
 extern crate alloc;
 
-mod private {
-    pub trait Sealed {}
-    impl<T: ?Sized> Sealed for alloc::rc::Rc<T> {}
-    #[cfg(target_has_atomic = "ptr")]
-    impl<T: ?Sized> Sealed for alloc::sync::Arc<T> {}
+/// Represents a socialist data container.
+///
+/// This should only be implemented on types that have semantics similar to [`Rc`](alloc::rc::Rc) or [`Arc`](alloc::sync::Arc).
+pub trait Comrade {
+    fn from_slice(s: &[u8]) -> Self;
+    fn as_slice(&self) -> &[u8];
 }
 
-macro_rules! comrade {
-    ($n:ident : $r:ty) => {
-        comrade! { $n : $r : alloc::rc::Rc, #[cfg(target_has_atomic = "ptr")] alloc::sync::Arc }
-    };
-    ($n:ident : $r:ty : $($(#[$a:meta])* $t:ident$(::$tt:ident)*),*) => {
-        /// Represents a socialist data container.
-        ///
-        /// This trait has been sealed away by the People to ensure it cannot be implemented on capitalist types like [`Box`](alloc::boxed::Box) and [`Vec`](alloc::vec::Vec).
-        pub trait $n: crate::private::Sealed {
-            fn from_slice(s: &$r) -> Self;
-            fn as_slice(&self) -> &$r;
+macro_rules! impl_comrade {
+    ($($(#[$a:meta])* $t:ident$(::$tt:ident)*),*) => {$(
+        $(#[$a])* impl<T: core::ops::Deref<Target = [u8]> + for<'a> From<&'a [u8]>> Comrade for $t$(::$tt)*<T> {
+            fn from_slice(s: &[u8]) -> Self { $t$(::$tt)*::new(T::from(s)) }
+            fn as_slice(&self) -> &[u8] { self }
         }
-        $(
-            $(#[$a])* impl<T: core::ops::Deref<Target = $r> + for<'a> From<&'a $r>> $n for $t$(::$tt)*<T> {
-                fn from_slice(s: &$r) -> Self { $t$(::$tt)*::new(T::from(s)) }
-                fn as_slice(&self) -> &$r { self }
-            }
-            $(#[$a])* impl $n for $t$(::$tt)*<$r> {
-                fn from_slice(s: &$r) -> Self { $t$(::$tt)*::from(s) }
-                fn as_slice(&self) -> &$r { self }
-            }
-        )*
-    };
+        $(#[$a])* impl Comrade for $t$(::$tt)*<[u8]> {
+            fn from_slice(s: &[u8]) -> Self { $t$(::$tt)*::from(s) }
+            fn as_slice(&self) -> &[u8] { self }
+        }
+    )*};
 }
-
-#[derive(Clone)]
-enum OurInner<T, const N: usize> {
-    Inline { len: core::num::NonZero<u8>, content: [u8; N] },
-    Outline { content: T },
-}
+impl_comrade! { alloc::rc::Rc, #[cfg(target_has_atomic = "ptr")] alloc::sync::Arc }
 
 mod bytes;
 mod string;
+pub mod comrades;
 
 pub use bytes::*;
 pub use string::*;
