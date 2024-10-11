@@ -45,14 +45,12 @@ macro_rules! make_comrade {
 
         impl From<&[u8]> for $name {
             fn from(value: &[u8]) -> Self {
-                debug_assert_eq!(align_of::<$counter>(), align_of::<usize>());
-                debug_assert_eq!(size_of::<$counter>(), size_of::<usize>());
+                debug_assert!(align_of::<$counter>() == ALIGN && size_of::<$counter>() == ALIGN);
 
-                let size = 2 * ALIGN + value.len();
                 unsafe {
-                    let ptr = alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(size, ALIGN).unwrap_unchecked());
-                    (ptr as *mut $counter).write(<$counter>::new(1));
-                    (ptr.add(ALIGN) as *mut usize).write(value.len());
+                    let ptr = alloc::alloc::alloc(alloc::alloc::Layout::from_size_align(2 * ALIGN + value.len(), ALIGN).unwrap_unchecked());
+                    *(ptr as *mut $counter) = <$counter>::new(1);
+                    *(ptr.add(ALIGN) as *mut usize) = value.len();
                     ptr.add(2 * ALIGN).copy_from_nonoverlapping(value.as_ptr(), value.len());
                     Self(NonNull::new_unchecked(ptr))
                 }
@@ -61,7 +59,7 @@ macro_rules! make_comrade {
 
         impl Clone for $name {
             fn clone(&self) -> Self {
-                unsafe { (self.0.as_ptr() as *const $counter).as_ref().unwrap_unchecked().increment(); }
+                unsafe { (*(self.0.as_ptr() as *const $counter)).increment(); }
                 Self(self.0)
             }
         }
@@ -69,9 +67,8 @@ macro_rules! make_comrade {
         impl Drop for $name {
             fn drop(&mut self) {
                 unsafe {
-                    if (self.0.as_ptr() as *const $counter).as_ref().unwrap_unchecked().decrement() == 0 {
-                        let size = 2 * ALIGN + (self.0.as_ptr().add(ALIGN) as *const usize).read();
-                        alloc::alloc::dealloc(self.0.as_ptr(), alloc::alloc::Layout::from_size_align(size, ALIGN).unwrap_unchecked());
+                    if (*(self.0.as_ptr() as *const $counter)).decrement() == 0 {
+                        alloc::alloc::dealloc(self.0.as_ptr(), alloc::alloc::Layout::from_size_align(2 * ALIGN + *(self.0.as_ptr().add(ALIGN) as *const usize), ALIGN).unwrap_unchecked());
                     }
                 }
             }
@@ -80,7 +77,7 @@ macro_rules! make_comrade {
         impl Deref for $name {
             type Target = [u8];
             fn deref(&self) -> &Self::Target {
-                unsafe { core::slice::from_raw_parts(self.0.as_ptr().add(2 * ALIGN), (self.0.as_ptr().add(ALIGN) as *const usize).read()) }
+                unsafe { core::slice::from_raw_parts(self.0.as_ptr().add(2 * ALIGN), *(self.0.as_ptr().add(ALIGN) as *const usize)) }
             }
         }
 

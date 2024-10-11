@@ -45,6 +45,9 @@ fn test_rc_bytes() {
         assert_eq!(&*vv, value);
         assert_ne!(v.as_ptr(), value.as_ptr());
         assert_eq!(v.as_ptr(), vv.as_ptr());
+        drop(v);
+        assert_eq!(vv, value);
+        assert_eq!(&*vv, value);
     }
 
     let empty = RcBytes::default();
@@ -67,6 +70,13 @@ fn test_arc_bytes() {
         assert_eq!(&*vv, value);
         assert_ne!(v.as_ptr(), value.as_ptr());
         assert_eq!(v.as_ptr(), vv.as_ptr());
+        drop(v);
+        assert_eq!(vv, value);
+        assert_eq!(&*vv, value);
+        std::thread::spawn(move || {
+            assert_eq!(vv, value);
+            assert_eq!(&*vv, value);
+        });
     }
 
     let empty = ArcBytes::default();
